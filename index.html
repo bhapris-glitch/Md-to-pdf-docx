@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doc Converter</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📄 Document Converter</h1>
+            <p>Markdown → PDF / DOCX</p>
+        </header>
+
+        <div class="converter">
+            <div class="input-section">
+                <div class="toolbar">
+                    <button onclick="loadSample()">📝 Sample</button>
+                    <button onclick="clearAll()">🗑️ Clear</button>
+                    <label class="file-btn">
+                        📂 Upload
+                        <input type="file" accept=".md,.txt" hidden onchange="handleFile(this)">
+                    </label>
+                </div>
+                <textarea id="markdownInput" placeholder="Write or paste your Markdown here..."></textarea>
+            </div>
+
+            <div class="output-section">
+                <div class="preview-header">
+                    <h3>Live Preview</h3>
+                    <div class="actions">
+                        <button onclick="convertToPDF()">⬇️ PDF</button>
+                        <button onclick="convertToDOCX()">⬇️ DOCX</button>
+                    </div>
+                </div>
+                <div id="preview" class="preview-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
