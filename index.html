@@ -4,7 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Zavoka Converter</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="./styles.css?v=2">
+    <style>
+        /* Keep the app styled even when a host fails to serve the external CSS file. */
+        * { box-sizing: border-box; }
+        html { color-scheme: light; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #2d3748; background: #f3f5fb; }
+        body { min-width: 320px; min-height: 100vh; margin: 0; background: linear-gradient(135deg, #f05a28, #d94820); }
+        .container { width: 100%; min-height: 100vh; margin: 0 auto; overflow: hidden; background: #fff; }
+        header { padding: 22px 30px; text-align: center; color: #fff; background: #2d3748; }
+        header h1 { margin: 0 0 5px; font-size: clamp(1.5rem, 3vw, 2rem); }
+        header p { margin: 0; opacity: .85; }
+        .converter { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: calc(100vh - 100px); }
+        .input-section, .output-section { display: flex; min-width: 0; min-height: 0; flex-direction: column; padding: 24px; }
+        .input-section { border-right: 2px solid #e2e8f0; }
+        .toolbar, .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+        .toolbar { margin-bottom: 15px; }
+        .toolbar button, .file-btn, .actions button { display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 8px; padding: 9px 15px; color: #fff; background: #e54d24; font: inherit; cursor: pointer; }
+        .toolbar button:hover, .file-btn:hover, .actions button:hover { background: #c83b19; }
+        .file-btn { position: relative; }
+        #markdownInput { flex: 1; width: 100%; min-height: 320px; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font: 14px/1.6 'Courier New', monospace; resize: vertical; }
+        #markdownInput:focus { border-color: #f05a28; outline: 3px solid #fed7c8; }
+        .preview-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 15px; }
+        .preview-header h3 { margin: 0; }
+        .actions button { padding-inline: 18px; font-weight: 600; }
+        .preview-content { flex: 1; min-height: 320px; padding: clamp(16px, 2vw, 24px); overflow: auto; overflow-wrap: anywhere; border: 2px solid #e2e8f0; border-radius: 10px; background: #fffaf8; }
+        .preview-content h1, .preview-content h2, .preview-content h3, .preview-content h4, .preview-content h5, .preview-content h6 { margin: 15px 0 10px; color: #2d3748; }
+        .preview-content p, .preview-content ul, .preview-content ol { margin: 10px 0; color: #4a5568; line-height: 1.6; }
+        .preview-content ul, .preview-content ol { padding-left: 1.5rem; }
+        .preview-content code { padding: 2px 6px; border-radius: 4px; background: #fce5dc; font-size: .9em; }
+        .preview-content pre { max-width: 100%; margin: 10px 0; padding: 15px; overflow-x: auto; border-radius: 8px; color: #e2e8f0; background: #2d3748; }
+        .preview-content pre code { padding: 0; color: inherit; background: transparent; }
+        .preview-content blockquote { margin: 10px 0; padding-left: 15px; border-left: 4px solid #f05a28; color: #718096; }
+        .preview-content table { width: 100%; margin: 10px 0; border-collapse: collapse; }
+        .preview-content th, .preview-content td { padding: 8px; border: 1px solid #e2e8f0; text-align: left; }
+        .preview-content th { background: #fce5dc; }
+        button:focus-visible, .file-btn:focus-within { outline: 3px solid #fed7c8; outline-offset: 2px; }
+        @media (max-width: 760px) {
+            .converter { grid-template-columns: minmax(0, 1fr); }
+            .input-section, .output-section { padding: 18px; }
+            .input-section { min-height: 440px; border-right: 0; border-bottom: 2px solid #e2e8f0; }
+            .output-section { min-height: 440px; }
+        }
+        @media (max-width: 420px) {
+            header { padding: 18px 14px; }
+            .input-section, .output-section { padding: 14px; }
+            .preview-header { align-items: flex-start; flex-direction: column; }
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js"></script>
