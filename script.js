@@ -1,22 +1,36 @@
-// Initialize marked
-marked.setOptions({
-    breaks: true,
-    gfm: true
-});
-
-// DOM elements
 const markdownInput = document.getElementById('markdownInput');
 const preview = document.getElementById('preview');
 
-// Live preview
+if (window.marked) {
+    window.marked.setOptions({ breaks: true, gfm: true });
+}
+
 markdownInput.addEventListener('input', updatePreview);
+
+function escapeHtml(value) {
+    return value.replace(/[&<>"']/g, (character) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    })[character]);
+}
 
 function updatePreview() {
     const markdown = markdownInput.value;
-    preview.innerHTML = marked.parse(markdown);
+    if (!markdown.trim()) {
+        preview.innerHTML = '';
+        return;
+    }
+
+    if (window.marked && typeof window.marked.parse === 'function') {
+        preview.innerHTML = window.marked.parse(markdown);
+    } else {
+        preview.innerHTML = `<pre>${escapeHtml(markdown)}</pre>`;
+    }
 }
 
-// Sample content
 function loadSample() {
     markdownInput.value = `# 📄 Sample Document
 
@@ -47,144 +61,152 @@ function hello() {
 
 ---
 
-*Generated with ❤️ by Document Converter*`;
+*Generated with ❤️ by Zavoka Converter*`;
     updatePreview();
 }
 
-// Clear all
 function clearAll() {
     markdownInput.value = '';
     preview.innerHTML = '';
 }
 
-// File upload
-function handleFile(input) {
-    const file = input.files[0];
+function readMarkdownFile(file) {
     if (!file) return;
-    
+
     const reader = new FileReader();
-    reader.onload = (e) => {
-        markdownInput.value = e.target.result;
+    reader.onload = () => {
+        markdownInput.value = String(reader.result || '');
         updatePreview();
     };
+    reader.onerror = () => alert('The file could not be read. Please try another file.');
     reader.readAsText(file);
+}
+
+function handleFile(input) {
+    const file = input.files && input.files[0];
+    if (file) readMarkdownFile(file);
     input.value = '';
 }
 
-// Convert to PDF
-function convertToPDF() {
+async function convertToPDF() {
     if (!markdownInput.value.trim()) {
         alert('Please enter some markdown content first!');
         return;
     }
-    
-    const element = document.createElement('div');
-    element.innerHTML = marked.parse(markdownInput.value);
-    element.style.padding = '20px';
-    
-    const opt = {
-        margin: 10,
-        filename: 'document.pdf',
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    
-    html2pdf().set(opt).from(element).save();
-}
-
-// Convert to DOCX
-function convertToDOCX() {
-    if (!markdownInput.value.trim()) {
-        alert('Please enter some markdown content first!');
+    if (typeof window.html2pdf !== 'function') {
+        alert('PDF export is unavailable. Check that the PDF library loaded.');
         return;
     }
-    
-    const { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, WidthType, AlignmentType } = docx;
-    
-    // Parse markdown to simple structure
-    const lines = markdownInput.value.split('\n');
-    const children = [];
-    
-    for (const line of lines) {
-        if (line.startsWith('# ')) {
-            children.push(new Paragraph({
-                text: line.substring(2),
-                heading: HeadingLevel.HEADING_1
-            }));
-        } else if (line.startsWith('## ')) {
-            children.push(new Paragraph({
-                text: line.substring(3),
-                heading: HeadingLevel.HEADING_2
-            }));
-        } else if (line.startsWith('### ')) {
-            children.push(new Paragraph({
-                text: line.substring(4),
-                heading: HeadingLevel.HEADING_3
-            }));
-        } else if (line.startsWith('- ')) {
-            children.push(new Paragraph({
-                text: line.substring(2),
-                bullet: { level: 0 }
-            }));
-        } else if (line.startsWith('> ')) {
-            children.push(new Paragraph({
-                text: line.substring(2),
-                style: 'IntenseQuote'
-            }));
-        } else if (line.trim() === '') {
-            children.push(new Paragraph({ text: '' }));
-        } else {
-            children.push(new Paragraph({
-                children: [new TextRun(line)]
-            }));
-        }
-    }
-    
-    const doc = new Document({
-        sections: [{
-            properties: {},
-            children: children
-        }]
-    });
-    
-    Packer.toBlob(doc).then(blob => {
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'document.docx';
-        a.click();
-        window.URL.revokeObjectURL(url);
-    });
-}
 
-// Initialize with sample
-loadSample();
+    try {
+        const element = document.createElement('div');
+        element.className = 'preview-content';
+        element.innerHTML = window.marked && window.marked.parse
+            ? window.marked.parse(markdownInput.value)
+            : `<pre>${escapeHtml(markdownInput.value)}</pre>`;
 
-// Drag and drop support
-const container = document.querySelector('.container');
-container.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    container.style.border = '3px dashed #667eea';
-});
-
-container.addEventListener('dragleave', () => {
-    container.style.border = 'none';
-});
-
-container.addEventListener('drop', (e) => {
-    e.preventDefault();
-    container.style.border = 'none';
-    
-    const file = e.dataTransfer.files[0];
-    if (file && (file.name.endsWith('.md') || file.name.endsWith('.txt'))) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            markdownInput.value = event.target.result;
-            updatePreview();
+        const options = {
+            margin: 10,
+            filename: 'document.pdf',
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
-        reader.readAsText(file);
-    } else {
+        await window.html2pdf().set(options).from(element).save();
+    } catch (error) {
+        console.error('PDF export failed:', error);
+        alert('PDF export failed. Please try again.');
+    }
+}
+
+function markdownToDocxText(text) {
+    return text
+        .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
+        .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+        .replace(/\*\*|__|~~|`|\*|_/g, '')
+        .trim();
+}
+
+async function convertToDOCX() {
+    if (!markdownInput.value.trim()) {
+        alert('Please enter some markdown content first!');
+        return;
+    }
+    if (!window.docx || !window.docx.Document || !window.docx.Packer || !window.docx.Paragraph || !window.docx.HeadingLevel) {
+        alert('DOCX export is unavailable because the DOCX library did not load. Check your internet connection and reload the page.');
+        return;
+    }
+
+    try {
+        const { Document, Packer, Paragraph, HeadingLevel } = window.docx;
+        const children = markdownInput.value.split(/\r?\n/).map((line) => {
+            const heading = line.match(/^(#{1,6})\s+(.*)$/);
+            if (heading) {
+                const level = Math.min(heading[1].length, 3);
+                const headingLevel = [HeadingLevel.HEADING_1, HeadingLevel.HEADING_2, HeadingLevel.HEADING_3][level - 1];
+                return new Paragraph({ text: markdownToDocxText(heading[2]), heading: headingLevel });
+            }
+
+            const bullet = line.match(/^\s*[-*+]\s+(.*)$/);
+            if (bullet) {
+                return new Paragraph({ text: markdownToDocxText(bullet[1]), bullet: { level: 0 } });
+            }
+
+            const numbered = line.match(/^\s*(\d+)[.)]\s+(.*)$/);
+            if (numbered) {
+                return new Paragraph({ text: `${numbered[1]}. ${markdownToDocxText(numbered[2])}` });
+            }
+
+            if (/^\s*>\s?/.test(line)) {
+                return new Paragraph({ text: markdownToDocxText(line.replace(/^\s*>\s?/, '')), style: 'IntenseQuote' });
+            }
+
+            if (/^\s*([-*_])\s*\1\s*\1+\s*$/.test(line)) {
+                return new Paragraph({ text: '' });
+            }
+
+            return new Paragraph({ text: markdownToDocxText(line) });
+        });
+
+        const documentFile = new Document({ sections: [{ children }] });
+        const blob = await Packer.toBlob(documentFile);
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'zavoka-document.docx';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+        console.error('DOCX export failed:', error);
+        alert('DOCX export failed. Please try again.');
+    }
+}
+
+const container = document.querySelector('.container');
+container.addEventListener('dragover', (event) => {
+    event.preventDefault();
+    container.style.outline = '3px dashed #667eea';
+    container.style.outlineOffset = '-3px';
+});
+
+container.addEventListener('dragleave', (event) => {
+    if (!container.contains(event.relatedTarget)) {
+        container.style.outline = '';
+    }
+});
+
+container.addEventListener('drop', (event) => {
+    event.preventDefault();
+    container.style.outline = '';
+
+    const file = event.dataTransfer.files[0];
+    if (file && /\.(md|txt)$/i.test(file.name)) {
+        readMarkdownFile(file);
+    } else if (file) {
         alert('Please drop a .md or .txt file!');
     }
 });
+
+loadSample();
